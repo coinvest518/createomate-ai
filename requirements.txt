@@ -2,7 +2,7 @@
 langchain>=0.1.0
 langchain-core>=0.1.0
 langchain-google-genai>=1.0.0,<2.0.0
-google-generativeai>=0.7.0,<0.8.0
+google-generativeai>=0.8.0
 
 # HTTP and API requests
 requests>=2.31.0
@@ -10,7 +10,7 @@ requests>=2.31.0
 # Social Media APIs
 tweepy>=4.14.0
 
-# Composio SDK for social media integrations (specific versions for compatibility)
+# Composio SDK for social media integrations
 composio
 composio-langchain
 
@@ -26,8 +26,5 @@ langsmith>=0.1.0
 # Scheduling and automation
 schedule>=1.2.0
 
-# Image processing for blog images
+# Image processing
 Pillow>=10.0.0
-
-# Google Generative AI for image generation
-google-generativeai>=0.8.0
