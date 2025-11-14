@@ -40,6 +40,10 @@ class CreatomateConfig(BaseSettings):
     facebook_page_id: str = os.getenv("FACEBOOK_PAGE_ID", "")
     facebook_access_token: str = os.getenv("FACEBOOK_ACCESS_TOKEN", "")
     
+    # Gmail Connected Account Configuration
+    gmail_connected_account_id: str = os.getenv("GMAIL_CONNECTED_ACCOUNT_ID", "")
+    gmail_user_id: str = os.getenv("GMAIL_USER_ID", "")
+    
     model_config = {
         "env_file": ".env",
         "case_sensitive": False,
@@ -73,11 +77,13 @@ def validate_config() -> bool:
         "composio_api_key": "COMPOSIO_API_KEY",
         "youtube_connected_account_id": "YOUTUBE_CONNECTED_ACCOUNT_ID", 
         "youtube_user_id": "YOUTUBE_USER_ID",
-        "facebook_page_id": "FACEBOOK_PAGE_ID"
+        "facebook_page_id": "FACEBOOK_PAGE_ID",
+        "gmail_connected_account_id": "GMAIL_CONNECTED_ACCOUNT_ID"
     }
     
     youtube_configured = all(getattr(config, field) for field in ["composio_api_key", "youtube_connected_account_id", "youtube_user_id"])
     facebook_configured = all(getattr(config, field) for field in ["composio_api_key", "facebook_connected_account_id", "facebook_page_id"])
+    gmail_configured = all(getattr(config, field) for field in ["composio_api_key", "gmail_connected_account_id", "gmail_user_id"])
     
     print("✅ Core configuration validated successfully")
     
@@ -90,6 +96,11 @@ def validate_config() -> bool:
         print("✅ Facebook integration configured")
     else:
         print("ℹ️  Facebook integration not configured")
+        
+    if gmail_configured:
+        print("✅ Gmail integration configured")
+    else:
+        print("ℹ️  Gmail integration not configured")
         
     if not youtube_configured and not facebook_configured:
         print("   Social media uploads will not be available")

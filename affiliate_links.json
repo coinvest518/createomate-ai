@@ -1,0 +1,88 @@
+{
+  "website_hosting": {
+    "hostinger": {
+      "name": "Hostinger",
+      "url": "https://hostinger.com/horizons?REFERRALCODE=VMKMILDHI76M",
+      "description": "Professional web hosting and domain services",
+      "category": "hosting"
+    }
+  },
+  "ai_tools": {
+    "lovable": {
+      "name": "Lovable",
+      "url": "https://lovable.dev/?via=daniel-wray",
+      "description": "AI-powered app builder for entrepreneurs",
+      "category": "ai_development"
+    },
+    "elevenlabs": {
+      "name": "ElevenLabs",
+      "url": "https://try.elevenlabs.io/2dh4kqbqw25i",
+      "description": "AI voice generation and cloning technology",
+      "category": "ai_voice"
+    }
+  },
+  "business_tools": {
+    "openphone": {
+      "name": "OpenPhone",
+      "url": "https://get.openphone.com/u8t88cu9allj",
+      "description": "Business phone system for entrepreneurs",
+      "category": "communication"
+    },
+    "manychat": {
+      "name": "ManyChat",
+      "url": "https://manychat.partnerlinks.io/t9nehj0w7tmz-wki14",
+      "description": "Chatbot automation for customer engagement",
+      "category": "automation"
+    },
+    "n8n": {
+      "name": "n8n",
+      "url": "https://n8n.partnerlinks.io/pxw8nlb4iwfh",
+      "description": "Workflow automation platform",
+      "category": "automation"
+    }
+  },
+  "content_tools": {
+    "veed": {
+      "name": "Veed",
+      "url": "https://veed.cello.so/Y4hEgduDP5L",
+      "description": "AI-powered video editing platform",
+      "category": "video"
+    }
+  },
+  "data_tools": {
+    "brightdata": {
+      "name": "BrightData",
+      "url": "https://get.brightdata.com/xafa5cizt3zw",
+      "description": "Web scraping and proxy solutions",
+      "category": "data"
+    }
+  },
+  "financial": {
+    "cointiply": {
+      "name": "Cointiply",
+      "url": "http://www.cointiply.com/r/agAkz",
+      "description": "Cryptocurrency rewards platform",
+      "category": "crypto"
+    },
+    "ava": {
+      "name": "Ava",
+      "url": "meetava.sjv.io/anDyvY",
+      "description": "Financial management app",
+      "category": "finance"
+    }
+  },
+  "digital_products": {
+    "theleap": {
+      "name": "The Leap",
+      "url": "https://join.theleap.co/FyY11sd1KY",
+      "description": "Digital product creation platform",
+      "category": "digital_products"
+    },
+    "amazon": {
+      "name": "Amazon",
+      "url": "https://amzn.to/4lICjtS",
+      "description": "Everything you need for business and life",
+      "category": "marketplace"
+    }
+  }
+}

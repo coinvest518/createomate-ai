@@ -25,3 +25,9 @@ langsmith>=0.1.0
 
 # Scheduling and automation
 schedule>=1.2.0
+
+# Image processing for blog images
+Pillow>=10.0.0
+
+# Google Generative AI for image generation
+google-generativeai>=0.8.0
