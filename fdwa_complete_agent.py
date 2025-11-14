@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 
 # Local imports
 from config import config, validate_config
-from creatomate_client import creatomate_client, TemplateModificationBuilder
+from creatomate_client import CreatomateClient
 # Removed OAuth client - using Composio for all integrations
 
 # Set up logging
@@ -225,21 +225,8 @@ Transform your business today
             main_message = content_data.get("main_message", "Transform your business with FDWA")
             cta = content_data.get("call_to_action", "Visit fdwa.site")
             
-            # Build video with professional FDWA branding
-            builder = TemplateModificationBuilder()
-            
-            # Use the template definition for correct modifications
-            from fdwa_template import get_ai_modifications
-            
-            # Get AI modifications based on the topic/theme
-            theme = "ai_consulting"  # Default theme
-            if "digital" in main_message.lower() or "transformation" in main_message.lower():
-                theme = "digital_transformation"
-            elif "automation" in main_message.lower() or "automate" in main_message.lower():
-                theme = "business_automation"
-            
-            # Get AI-generated modifications using correct template structure
-            ai_modifications = get_ai_modifications(theme)
+            # Initialize Creatomate client
+            client = CreatomateClient()
             
             # Handle template style
             if template_style == "multi_scene":
@@ -267,15 +254,16 @@ Transform your business today
                 }
                 
                 # Create video with template ID (not JSON)
-                result = creatomate_client.create_video_by_template(
-                    template_id=multi_scene_template_id,
-                    modifications=modifications
+                result = client.create_video(
+                    text=multi_content['scene_1'],
+                    handle="@fdwa",
+                    name="Futuristic Digital Wealth Agency"
                 )
                 
                 if result and result.get("id"):
                     # Wait for video completion
                     logger.info("Waiting for multi-scene video render to complete...")
-                    completed_result = creatomate_client.wait_for_completion(result["id"])
+                    completed_result = client.wait_for_completion(result["id"])
                     
                     if completed_result.get("url"):
                         video_info = {
@@ -309,15 +297,16 @@ Transform your business today
                 }
                 
                 # Create video with quote template
-                result = creatomate_client.create_video_by_template(
-                    template_id=quote_template_id,
-                    modifications=modifications
+                result = client.create_video(
+                    text=quote_content['answer'],
+                    handle="@fdwa",
+                    name="Futuristic Digital Wealth Agency"
                 )
                 
                 if result and result.get("id"):
                     # Wait for video completion
                     logger.info("Waiting for quote video render to complete...")
-                    completed_result = creatomate_client.wait_for_completion(result["id"])
+                    completed_result = client.wait_for_completion(result["id"])
                     
                     if completed_result.get("url"):
                         video_info = {
@@ -349,15 +338,16 @@ Transform your business today
                 }
                 
                 # Create video with template ID (not JSON)
-                result = creatomate_client.create_video_by_template(
-                    template_id=single_scene_template_id,
-                    modifications=modifications
+                result = client.create_video(
+                    text=main_message,
+                    handle="@fdwa",
+                    name="Futuristic Digital Wealth Agency"
                 )
                 
                 if result and result.get("id"):
                     # Wait for video completion
                     logger.info("Waiting for video render to complete...")
-                    completed_result = creatomate_client.wait_for_completion(result["id"])
+                    completed_result = client.wait_for_completion(result["id"])
                     
                     if completed_result.get("url"):
                         video_info = {
