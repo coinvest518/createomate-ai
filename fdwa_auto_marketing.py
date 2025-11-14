@@ -67,12 +67,8 @@ class FDWAAutoMarketing:
             "AI ROI Measurement and Optimization"
         ]
         
-        # Template styles with weights (higher = more likely)
-        self.template_styles = {
-            "single_scene": 30,    # Professional content
-            "multi_scene": 35,     # Social media content  
-            "quote": 35           # Educational content
-        }
+        # Single template - only text changes
+        self.template_style = "single_scene"  # Always use single template
         
         # Track used topics to ensure variety
         self.recent_topics = []
@@ -105,27 +101,20 @@ class FDWAAutoMarketing:
         logger.info(f"📝 Selected unique topic: {selected_topic}")
         return selected_topic
     
-    def select_random_template(self) -> str:
-        """Randomly select a template style based on weights"""
-        
-        # Create weighted list
-        weighted_templates = []
-        for template, weight in self.template_styles.items():
-            weighted_templates.extend([template] * weight)
-        
-        selected = random.choice(weighted_templates)
-        logger.info(f"🎨 Selected template style: {selected}")
-        return selected
+    def get_template_style(self) -> str:
+        """Always return single template"""
+        logger.info(f"🎨 Using single template for all content")
+        return self.template_style
     
     async def create_automated_content(self) -> Dict:
         """Create unique FDWA marketing content automatically"""
         
         try:
-            # Get unique topic and random template
+            # Get unique topic - single template for all
             topic = self.get_unique_topic()
-            template_style = self.select_random_template()
+            template_style = self.get_template_style()
             
-            logger.info(f"🚀 Creating FDWA content: '{topic}' using '{template_style}' template")
+            logger.info(f"🚀 Creating FDWA content: '{topic}'")
             
             # Create the video with selected parameters
             result = await self.agent.create_and_post_video(
@@ -223,9 +212,8 @@ if __name__ == "__main__":
     # Initialize the auto marketing system
     auto_marketing = FDWAAutoMarketing()
     
-    print("Available Templates:")
-    for template, weight in auto_marketing.template_styles.items():
-        print(f"  • {template}: {weight}% likelihood")
+    print("Template:")
+    print(f"  • {auto_marketing.template_style}: Single template with text variations")
     
     print(f"\nFDWA Business Topics: {len(auto_marketing.fdwa_topics)} unique topics")
     print("🕐 Starting hourly scheduler...")

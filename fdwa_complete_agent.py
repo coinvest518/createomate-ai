@@ -218,153 +218,44 @@ Transform your business today
     
     @traceable(name="create_video")
     def create_marketing_video(self, content_data: Dict[str, Any], template_style: str = "single_scene") -> Dict[str, Any]:
-        """Create professional marketing video with FDWA branding"""
+        """Create video using single template with text changes only"""
         try:
-            logger.info(f" Creating FDWA marketing video ({template_style} style)")
+            logger.info(f" Creating FDWA marketing video")
             
             main_message = content_data.get("main_message", "Transform your business with FDWA")
             cta = content_data.get("call_to_action", "Visit fdwa.site")
             
-            # Initialize Creatomate client
+            # Use single template for all video types - just change the text
             client = CreatomateClient()
             
-            # Handle template style
-            if template_style == "multi_scene":
-                # Use the updated multi-scene template ID with music support
-                multi_scene_template_id = "e0634967-3006-4703-8e1b-548af7ba7629"
+            # Create video with single template
+            result = client.create_video(
+                text=main_message,
+                handle="@fdwa",
+                name="Futuristic Digital Wealth Agency"
+            )
+            
+            if result and result.get("id"):
+                # Wait for video completion
+                logger.info("Waiting for video render to complete...")
+                completed_result = client.wait_for_completion(result["id"])
                 
-                # Build multi-scene modifications like your working Python example
-                from fdwa_template import get_multi_scene_ai_content
-                multi_content = get_multi_scene_ai_content(theme, main_message)
-                
-                # Build modifications with correct field names matching new template structure
-                modifications = {
-                    # Music track for the video
-                    "Music.source": "https://creatomate.com/files/assets/b5dc815e-dcc9-4c62-9405-f94913936bf5",
-                    # Background images - use .source property for dynamic elements
-                    "Background-1.source": "https://creatomate.com/files/assets/4a7903f0-37bc-48df-9d83-5eb52afd5d07",
-                    "Background-2.source": "https://creatomate.com/files/assets/4a6f6b28-bb42-4987-8eca-7ee36b347ee7", 
-                    "Background-3.source": "https://creatomate.com/files/assets/4f6963a5-7286-450b-bc64-f87a3a1d8964",
-                    "Background-4.source": "https://creatomate.com/files/assets/36899eae-a128-43e6-9e97-f2076f54ea18",
-                    # Text content - use .text property for dynamic text elements  
-                    "Text-1.text": multi_content['scene_1'],
-                    "Text-2.text": multi_content['scene_2'],
-                    "Text-3.text": multi_content['scene_3'],
-                    "Text-4.text": multi_content['scene_4']
-                }
-                
-                # Create video with template ID (not JSON)
-                result = client.create_video(
-                    text=multi_content['scene_1'],
-                    handle="@fdwa",
-                    name="Futuristic Digital Wealth Agency"
-                )
-                
-                if result and result.get("id"):
-                    # Wait for video completion
-                    logger.info("Waiting for multi-scene video render to complete...")
-                    completed_result = client.wait_for_completion(result["id"])
+                if completed_result.get("url"):
+                    video_info = {
+                        "status": "success",
+                        "video_url": completed_result["url"],
+                        "render_id": result["id"],
+                        "main_message": main_message,
+                        "call_to_action": cta,
+                        "content_data": content_data
+                    }
                     
-                    if completed_result.get("url"):
-                        video_info = {
-                            "status": "success",
-                            "video_url": completed_result["url"],
-                            "render_id": result["id"],
-                            "main_message": main_message,
-                            "call_to_action": cta,
-                            "content_data": content_data
-                        }
-                        
-                        logger.info(" FDWA marketing video created", video_url=completed_result["url"])
-                        return video_info
-                    else:
-                        return {"status": "error", "message": "Multi-scene video completed but no URL available"}
+                    logger.info(" FDWA marketing video created", video_url=completed_result["url"])
+                    return video_info
                 else:
-                    return {"status": "error", "message": "Multi-scene video creation failed - no render ID"}
-            elif template_style == "quote":
-                # Use the new quote template with animated question and answer
-                quote_template_id = "95cdcf77-6ed7-42f3-9e94-6f7f1b25a870"
-                
-                # Generate question and answer content for FDWA
-                from fdwa_template import get_quote_ai_content
-                quote_content = get_quote_ai_content(theme, main_message)
-                
-                # Build modifications for quote template
-                modifications = {
-                    "Question.text": quote_content['question'],
-                    "Quote.text": quote_content['answer'], 
-                    "Handle.text": "@fdwa"
-                }
-                
-                # Create video with quote template
-                result = client.create_video(
-                    text=quote_content['answer'],
-                    handle="@fdwa",
-                    name="Futuristic Digital Wealth Agency"
-                )
-                
-                if result and result.get("id"):
-                    # Wait for video completion
-                    logger.info("Waiting for quote video render to complete...")
-                    completed_result = client.wait_for_completion(result["id"])
-                    
-                    if completed_result.get("url"):
-                        video_info = {
-                            "status": "success",
-                            "video_url": completed_result["url"],
-                            "render_id": result["id"],
-                            "main_message": main_message,
-                            "call_to_action": cta,
-                            "content_data": content_data
-                        }
-                        
-                        logger.info(" FDWA marketing video created", video_url=completed_result["url"])
-                        return video_info
-                    else:
-                        return {"status": "error", "message": "Quote video completed but no URL available"}
-                else:
-                    return {"status": "error", "message": "Quote video creation failed - no render ID"}
+                    return {"status": "error", "message": "Video completed but no URL available"}
             else:
-                # Use new single scene template ID
-                single_scene_template_id = "cc493b27-5a2c-4218-b307-26a2420f2569"
-                
-                # Build modifications for new single scene template
-                modifications = {
-                    "Image.source": "https://creatomate.com/files/assets/4217ad24-5d65-44cd-88f9-deb70c58531b",
-                    "Text.text": main_message,
-                    "Handle.text": "@fdwa",
-                    "Name.text": "Futuristic Digital Wealth Agency", 
-                    "Picture.source": "https://creatomate.com/files/assets/6f9e0623-95a6-429f-91f1-a27272434083"
-                }
-                
-                # Create video with template ID (not JSON)
-                result = client.create_video(
-                    text=main_message,
-                    handle="@fdwa",
-                    name="Futuristic Digital Wealth Agency"
-                )
-                
-                if result and result.get("id"):
-                    # Wait for video completion
-                    logger.info("Waiting for video render to complete...")
-                    completed_result = client.wait_for_completion(result["id"])
-                    
-                    if completed_result.get("url"):
-                        video_info = {
-                            "status": "success",
-                            "video_url": completed_result["url"],
-                            "render_id": result["id"],
-                            "main_message": main_message,
-                            "call_to_action": cta,
-                            "content_data": content_data
-                        }
-                        
-                        logger.info(" FDWA marketing video created", video_url=completed_result["url"])
-                        return video_info
-                    else:
-                        return {"status": "error", "message": "Video completed but no URL available"}
-                else:
-                    return {"status": "error", "message": "Video creation failed - no render ID"}
+                return {"status": "error", "message": "Video creation failed - no render ID"}
                 
         except Exception as e:
             logger.error(f"Video creation failed: {e}")
@@ -546,8 +437,7 @@ Transform your business today
                 "recipient_email": recipient_email,
                 "subject": subject,
                 "body": body,
-                "is_html": is_html,
-                "user_id": "me"
+                "is_html": is_html
             }
             
             logger.info(f"Gmail params: subject='{subject[:50]}...', recipient={recipient_email}")
@@ -555,6 +445,7 @@ Transform your business today
                 "GMAIL_SEND_EMAIL",
                 email_params,
                 connected_account_id=self.gmail_connected_account_id,
+                entity_id="me",
                 version=os.getenv("GMAIL_TOOL_VERSION", "20251111_00")
             )
             
@@ -598,11 +489,8 @@ Transform your business today
             logger.info(f" Template Style: {template_style}")
             logger.info(f" Available templates: single_scene, multi_scene, quote")
             
-            # Validate template style
-            valid_templates = ["single_scene", "multi_scene", "quote"]
-            if template_style not in valid_templates:
-                logger.warning(f" Invalid template style '{template_style}', using 'single_scene'")
-                template_style = "single_scene"
+            # All template styles use the same template - just different text
+            logger.info(f" Using single template for all styles")
             
             # Step 1: Generate marketing content
             logger.info(" Step 1: Generating marketing content...")
