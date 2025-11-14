@@ -2,10 +2,8 @@
 Creatomate API integration module
 Handles all interactions with the Creatomate video generation API
 """
-import asyncio
-import aiohttp
 import requests
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 import structlog
 from config import config
 
@@ -14,47 +12,47 @@ logger = structlog.get_logger()
 class CreatomateClient:
     """Client for interacting with Creatomate API"""
     
-    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None):
-        self.api_key = api_key or config.api_key
-        self.base_url = base_url or config.base_url
+    def __init__(self, api_key: Optional[str] = None):
+        # Use new API key and template ID
+        self.api_key = "3361417c09d14983ac1116769b28491eae8342072897a144656fbfa8c3d3f0c76581a79b453d5fc1bfe10c476c9211f0"
+        self.base_url = "https://api.creatomate.com/v2"
+        self.template_id = "1718b538-daff-478d-ac9c-0235dca6680e"
         self.headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}"
         }
     
-    def create_video_by_template(
-        self, 
-        template_id: str,
-        modifications: Dict[str, Any],
-        webhook_url: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def create_video(self, text: str, handle: str = "@elisabethparker", name: str = "Elisabeth Parker") -> Dict[str, Any]:
         """
-        Create a video using a template with modifications
+        Create a video using the single template with modifications
         
         Args:
-            template_id: The ID of the template to use
-            modifications: Dictionary of modifications to apply to the template
-            webhook_url: Optional webhook URL for notifications
+            text: The main text content for the video
+            handle: Social media handle (default: @elisabethparker)
+            name: Name to display (default: Elisabeth Parker)
             
         Returns:
             Response from Creatomate API containing render information
         """
-        endpoint = f"{self.base_url}/renders"
+        url = f"{self.base_url}/renders"
         
-        payload = {
-            "template_id": template_id,
-            "modifications": modifications
+        data = {
+            "template_id": self.template_id,
+            "modifications": {
+                "Image.source": "https://creatomate.com/files/assets/4217ad24-5d65-44cd-88f9-deb70c58531b",
+                "Text.text": text,
+                "Handle.text": handle,
+                "Name.text": name,
+                "Picture.source": "https://creatomate.com/files/assets/d6628425-8e35-4fee-9de8-a18d21309546"
+            }
         }
-        
-        if webhook_url:
-            payload["webhook_url"] = webhook_url
         
         try:
             logger.info("Creating video with template", 
-                       template_id=template_id, 
-                       modifications=modifications)
+                       template_id=self.template_id, 
+                       text=text)
             
-            response = requests.post(endpoint, json=payload, headers=self.headers)
+            response = requests.post(url, json=data, headers=self.headers)
             response.raise_for_status()
             
             result = response.json()
@@ -64,84 +62,6 @@ class CreatomateClient:
         except requests.exceptions.RequestException as e:
             logger.error("Failed to create video", error=str(e))
             raise
-    
-    def create_video_from_json(
-        self, 
-        template_json: Dict[str, Any],
-        modifications: Dict[str, Any],
-        webhook_url: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Create a video using template JSON directly with modifications
-        
-        Args:
-            template_json: The template JSON structure
-            modifications: Dictionary of modifications to apply
-            webhook_url: Optional webhook URL for notifications
-            
-        Returns:
-            Response from Creatomate API containing render information
-        """
-        endpoint = f"{self.base_url}/renders"
-        
-        payload = {
-            "source": template_json,
-            "modifications": modifications
-        }
-        
-        if webhook_url:
-            payload["webhook_url"] = webhook_url
-        
-        try:
-            logger.info("Creating video with JSON template", 
-                       modifications=modifications)
-            
-            response = requests.post(endpoint, json=payload, headers=self.headers)
-            response.raise_for_status()
-            
-            result = response.json()
-            logger.info("Video creation initiated", render_id=result.get("id"))
-            return result
-            
-        except requests.exceptions.RequestException as e:
-            logger.error("Failed to create video", error=str(e))
-            raise
-    
-    async def create_video_async(
-        self, 
-        template_id: str,
-        modifications: Dict[str, Any],
-        webhook_url: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Async version of create_video_by_template
-        """
-        endpoint = f"{self.base_url}/renders"
-        
-        payload = {
-            "template_id": template_id,
-            "modifications": modifications
-        }
-        
-        if webhook_url:
-            payload["webhook_url"] = webhook_url
-        
-        async with aiohttp.ClientSession() as session:
-            try:
-                logger.info("Creating video with template (async)", 
-                           template_id=template_id, 
-                           modifications=modifications)
-                
-                async with session.post(endpoint, json=payload, headers=self.headers) as response:
-                    response.raise_for_status()
-                    result = await response.json()
-                    
-                    logger.info("Video creation initiated (async)", render_id=result.get("id"))
-                    return result
-                    
-            except aiohttp.ClientError as e:
-                logger.error("Failed to create video (async)", error=str(e))
-                raise
     
     def get_render_status(self, render_id: str) -> Dict[str, Any]:
         """
@@ -196,118 +116,19 @@ class CreatomateClient:
         
         raise TimeoutError(f"Render {render_id} did not complete within {timeout} seconds")
 
-class TemplateModificationBuilder:
-    """Helper class to build template modifications"""
-    
-    def __init__(self):
-        self.modifications = {}
-    
-    def set_text(self, element_name: str, text: str) -> 'TemplateModificationBuilder':
-        """Set text content for a text element"""
-        self.modifications[element_name] = text
-        return self
-    
-    def set_text_property(self, element_name: str, property_name: str, value: Any) -> 'TemplateModificationBuilder':
-        """Set a specific property of a text element"""
-        self.modifications[f"{element_name}.{property_name}"] = value
-        return self
-    
-    def set_media(self, element_name: str, url: str) -> 'TemplateModificationBuilder':
-        """Set media source for an image/video element"""
-        self.modifications[element_name] = url
-        return self
-    
-    def set_color(self, element_name: str, color: str) -> 'TemplateModificationBuilder':
-        """Set fill color for an element"""
-        self.modifications[f"{element_name}.fill_color"] = color
-        return self
-    
-    def set_font_family(self, element_name: str, font: str) -> 'TemplateModificationBuilder':
-        """Set font family for a text element"""
-        self.modifications[f"{element_name}.font_family"] = font
-        return self
-    
-    def set_timing(self, element_name: str, start_time: float, duration: Optional[float] = None) -> 'TemplateModificationBuilder':
-        """Set timing for an element"""
-        self.modifications[f"{element_name}.time"] = start_time
-        if duration is not None:
-            self.modifications[f"{element_name}.duration"] = duration
-        return self
-    
-    def remove_element(self, element_name: str) -> 'TemplateModificationBuilder':
-        """Remove an element from the template"""
-        self.modifications[element_name] = {}
-        return self
-    
-    def set_template_dimensions(self, width: int, height: int) -> 'TemplateModificationBuilder':
-        """Set template dimensions"""
-        self.modifications["width"] = width
-        self.modifications["height"] = height
-        return self
-    
-    def build(self) -> Dict[str, Any]:
-        """Build and return the modifications dictionary"""
-        return self.modifications.copy()
+# Simple helper function for creating videos
+def create_quote_video(text: str, handle: str = "@elisabethparker", name: str = "Elisabeth Parker") -> Dict[str, Any]:
+    """Simple function to create a quote video"""
+    client = CreatomateClient()
+    return client.create_video(text, handle, name)
 
-class SocialVideoTemplateBuilder:
-    """
-    Specialized builder for the social video template with dynamic elements:
-    - Text: Main quote text (dynamic)
-    - Handle: Social media handle (dynamic) 
-    - Name: Brand/profile name (dynamic)
-    - Picture: Profile picture (dynamic)
-    - Image: Background image (dynamic)
-    """
+# Test the new simplified API
+if __name__ == "__main__":
+    client = CreatomateClient()
+    test_text = "It is unwise to be too sure of one's own wisdom. It is healthy to be reminded that the strongest might weaken and the wisest might err."
     
-    def __init__(self):
-        self.modifications = {}
-    
-    def set_quote_text(self, text: str) -> 'SocialVideoTemplateBuilder':
-        """Set the main quote text"""
-        self.modifications["Text"] = text
-        return self
-    
-    def set_social_handle(self, handle: str) -> 'SocialVideoTemplateBuilder':
-        """Set the social media handle (e.g., @username)"""
-        if not handle.startswith("@"):
-            handle = f"@{handle}"
-        self.modifications["Handle"] = handle
-        return self
-    
-    def set_profile_name(self, name: str) -> 'SocialVideoTemplateBuilder':
-        """Set the profile/brand name"""
-        self.modifications["Name"] = name
-        return self
-    
-    def set_profile_picture(self, image_url: str) -> 'SocialVideoTemplateBuilder':
-        """Set the profile picture URL"""
-        self.modifications["Picture"] = image_url
-        return self
-    
-    def set_background_image(self, image_url: str) -> 'SocialVideoTemplateBuilder':
-        """Set the background image URL"""
-        self.modifications["Image"] = image_url
-        return self
-    
-    def set_text_color(self, color: str) -> 'SocialVideoTemplateBuilder':
-        """Set the color of the main text"""
-        self.modifications["Text.fill_color"] = color
-        return self
-    
-    def set_text_font_size(self, size: str) -> 'SocialVideoTemplateBuilder':
-        """Set the font size of the main text (e.g., '5 vmin')"""
-        self.modifications["Text.font_size"] = size
-        return self
-    
-    def set_template_dimensions(self, width: int = 720, height: int = 1280) -> 'SocialVideoTemplateBuilder':
-        """Set template dimensions (default is vertical 720x1280 for social media)"""
-        self.modifications["width"] = width
-        self.modifications["height"] = height
-        return self
-    
-    def build(self) -> Dict[str, Any]:
-        """Build and return the modifications dictionary"""
-        return self.modifications.copy()
-
-# Default client instance
-creatomate_client = CreatomateClient()
+    try:
+        result = client.create_video(test_text)
+        print(f"Video creation successful: {result}")
+    except Exception as e:
+        print(f"Error: {e}")

@@ -4,7 +4,7 @@ This tells the AI exactly which fields to modify and how
 """
 
 # Your actual single scene template ID  
-FDWA_TEMPLATE_ID = "cc493b27-5a2c-4218-b307-26a2420f2569"
+FDWA_TEMPLATE_ID = "1718b538-daff-478d-ac9c-0235dca6680e"
 
 # Exact template structure from your JSON
 FDWA_TEMPLATE_STRUCTURE = {
