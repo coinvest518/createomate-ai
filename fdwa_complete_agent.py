@@ -445,7 +445,6 @@ Transform your business today
                 "GMAIL_SEND_EMAIL",
                 email_params,
                 connected_account_id=self.gmail_connected_account_id,
-                entity_id="me",
                 version=os.getenv("GMAIL_TOOL_VERSION", "20251111_00")
             )
             
