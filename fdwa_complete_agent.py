@@ -30,6 +30,7 @@ from utils.video_utils import probe_codecs, reencode_to_h264_aac
 # Local imports
 from config import config, validate_config
 from creatomate_client import CreatomateClient
+from utils.composio_tools import execute_tool
 # Removed OAuth client - using Composio for all integrations
 
 # Set up logging
@@ -113,6 +114,7 @@ class FDWAMarketingAgent:
         self.gmail_ready = True
         
         logger.info("FDWA Marketing Agent initialized")
+        logger.info(f"Gmail config: user_id={self.gmail_user_id}, connected_account_id={self.gmail_connected_account_id}")
     
     @traceable(name="ai_generate_content")
     def generate_marketing_content(self, topic: str, video_type: str = "promotional") -> Dict[str, Any]:
@@ -325,7 +327,7 @@ Transform your business today
     
     @traceable(name="send_email")
     def send_email(self, recipient_email: str, subject: str, body: str, is_html: bool = False) -> Dict[str, Any]:
-        """Send email via Gmail using Composio"""
+        """Send email via Gmail using Composio - direct tool execution"""
         try:
             logger.info(f"📧 Sending email to {recipient_email}")
             if not self.gmail_ready or not self.composio_client:
@@ -335,16 +337,16 @@ Transform your business today
                 "recipient_email": recipient_email,
                 "subject": subject,
                 "body": body,
-                "is_html": is_html,
-                "user_id": self.gmail_user_id or "me"
+                "is_html": is_html
             }
             
             logger.info(f"Gmail params: subject='{subject[:50]}...', recipient={recipient_email}")
+            
+            # Direct email send - the tool is already authenticated
             result = self.composio_client.tools.execute(
                 "GMAIL_SEND_EMAIL",
                 email_params,
                 connected_account_id=self.gmail_connected_account_id,
-                entity_id=self.gmail_user_id or "me",
                 version=os.getenv("GMAIL_TOOL_VERSION", "20251111_00")
             )
             

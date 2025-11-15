@@ -48,8 +48,16 @@ class FDWABlogAgent:
         # Initialize Gmail client for blog posting
         try:
             from composio import Composio
+            from utils.composio_tools import validate_connected_account
             self.composio_client = Composio(api_key=config.composio_api_key)
             self.gmail_connected_account_id = config.gmail_connected_account_id
+            self.gmail_user_id = config.gmail_user_id
+            # If a connected_account_id isn't set, attempt to find an active account for user
+            if not self.gmail_connected_account_id and self.gmail_user_id:
+                found = validate_connected_account(self.composio_client, self.gmail_user_id, toolkit_slug="GMAIL")
+                if found:
+                    self.gmail_connected_account_id = found
+            logger.info(f"Gmail blog config: user_id={self.gmail_user_id}, connected_account_id={self.gmail_connected_account_id}")
             logger.info("📧 Gmail client initialized for blog posting")
         except Exception as e:
             logger.error(f"Gmail initialization failed: {e}")
@@ -195,7 +203,7 @@ Return JSON format:
         try:
             # Create email subject (Blogger uses this as post title)
             email_subject = blog_title
-            
+
             # Send clean HTML email to Blogger
             email_params = {
                 "recipient_email": self.blogger_email,
@@ -204,12 +212,16 @@ Return JSON format:
                 "is_html": True,
                 "user_id": "me"
             }
-            
+
             logger.info(f"📧 Sending blog to Blogger: {blog_title[:50]}...")
-            result = self.composio_client.tools.execute(
-                "GMAIL_SEND_EMAIL",
-                email_params,
+            # use the shared composio helper to execute the tool safely
+            from utils.composio_tools import execute_tool
+            result = execute_tool(
+                self.composio_client,
+                slug="GMAIL_SEND_EMAIL",
+                params=email_params,
                 connected_account_id=self.gmail_connected_account_id,
+                user_id=self.gmail_user_id or "me",
                 version=os.getenv("GMAIL_TOOL_VERSION", "20251111_00")
             )
             
