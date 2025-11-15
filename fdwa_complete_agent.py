@@ -7,6 +7,7 @@ import os
 import json
 import requests
 from typing import Dict, Any, Optional, List
+import time
 from datetime import datetime
 import structlog
 
@@ -24,6 +25,7 @@ except ImportError as e:
         return decorator
 
 from pydantic import BaseModel, Field
+from utils.video_utils import probe_codecs, reencode_to_h264_aac
 
 # Local imports
 from config import config, validate_config
@@ -103,12 +105,10 @@ class FDWAMarketingAgent:
         # Initialize Composio Python client for YouTube and Facebook
         from composio import Composio
         self.composio_client = Composio(api_key=config.composio_api_key)
-        self.user_id = config.youtube_user_id
+        self.gmail_user_id = config.gmail_user_id
         self.facebook_page_id = config.facebook_page_id
-        self.youtube_connected_account_id = config.youtube_connected_account_id
         self.facebook_connected_account_id = config.facebook_connected_account_id
         self.gmail_connected_account_id = config.gmail_connected_account_id
-        self.youtube_ready = True
         self.facebook_ready = True
         self.gmail_ready = True
         
@@ -261,110 +261,8 @@ Transform your business today
             logger.error(f"Video creation failed: {e}")
             return {"status": "error", "message": str(e)}
     
-    @traceable(name="upload_youtube_composio") 
-    def upload_to_youtube(self, video_info: Dict[str, Any]) -> Dict[str, Any]:
-        """Upload video to YouTube using Composio (same pattern as other tools)"""
-        try:
-            logger.info(" Uploading FDWA video to YouTube via Composio")
-            if not self.youtube_ready or not self.composio_client:
-                return {"status": "error", "message": "YouTube integration not ready"}
-            if video_info.get("status") != "success":
-                return {"status": "error", "message": "Invalid video data"}
-            video_url = video_info.get("video_url")
-            content_data = video_info.get("content_data", {})
-            title = content_data.get("youtube_title", "FDWA Marketing Video")
-            description = content_data.get("youtube_description", "FDWA AI Marketing Video")
-            # Download and validate video first
-            import requests
-            import tempfile
-            import os
-            
-            logger.info(f"Downloading video from: {video_url}")
-            response = requests.get(video_url, timeout=60)
-            
-            if response.status_code != 200:
-                logger.error(f"Failed to download video: {response.status_code}")
-                return {"status": "error", "message": "Failed to download video for YouTube"}
-            
-            video_content = response.content
-            video_size = len(video_content)
-            logger.info(f"Downloaded video size: {video_size} bytes ({video_size/1024/1024:.1f} MB)")
-            
-            # Check if video is too small (likely corrupted)
-            if video_size < 100000:  # Less than 100KB
-                logger.error(f"Video too small ({video_size} bytes) - likely corrupted")
-                return {"status": "error", "message": "Video file too small - may be corrupted"}
-            
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-                temp_file.write(video_content)
-                temp_video_path = temp_file.name
-                
-            logger.info(f"Video saved to: {temp_video_path}")
-            
-            # Ensure title and description are not too long
-            title = title[:100] if len(title) > 100 else title
-            description = description[:5000] if len(description) > 5000 else description
-            
-            youtube_params = {
-                "categoryId": "22",
-                "description": description,
-                "privacyStatus": "public",
-                "tags": ["AI", "FDWA", "consulting", "business", "automation"],
-                "title": title,
-                "videoFilePath": temp_video_path
-            }
-            
-            logger.info(f"YouTube upload params: title='{title[:50]}...', description length={len(description)}")
-            logger.info(f" Uploading via user {self.user_id}")
-            result = self.composio_client.tools.execute(
-                slug="YOUTUBE_UPLOAD_VIDEO",
-                arguments=youtube_params,
-                connected_account_id=self.youtube_connected_account_id,
-                version=os.getenv("YOUTUBE_TOOL_VERSION", "20251027_00")
-            )
-            
-            # Clean up temp file
-            try:
-                os.unlink(temp_video_path)
-            except:
-                pass
-            if result.get("successful", False):
-                video_id = result.get("data", {}).get("video_id")
-                logger.info(f" YouTube upload result: {result}")
-                
-                # Check for rate limit or quota issues
-                if not video_id:
-                    logger.warning("No video ID returned - upload may have failed silently")
-                    # Still consider it a success since the upload API call worked
-                    return {
-                        "status": "success", 
-                        "message": "YouTube upload initiated (processing may fail due to video format issues)"
-                    }
-                
-                logger.info(f" YouTube upload successful: {video_id}")
-                return {
-                    "status": "success",
-                    "platform": "YouTube",
-                    "video_id": video_id,
-                    "video_url": f"https://youtube.com/watch?v={video_id}",
-                    "message": "FDWA marketing video posted successfully!"
-                }
-            else:
-                error_msg = result.get("error", "Unknown error")
-                
-                # Check for rate limit specifically
-                if "exceeded" in str(error_msg).lower() or "quota" in str(error_msg).lower():
-                    logger.error(f" YouTube rate limit hit: {error_msg}")
-                    return {
-                        "status": "error", 
-                        "message": "YouTube rate limit exceeded - skipping upload"
-                    }
-                
-                logger.error(f" YouTube upload failed: {error_msg}")
-                return {"status": "error", "message": f"YouTube upload failed: {error_msg}"}
-        except Exception as e:
-            logger.error(f"YouTube upload failed: {e}")
-            return {"status": "error", "message": str(e)}
+    # YouTube upload functionality removed by user request.
+    # The agent no longer uploads to YouTube. For posting to platforms, use Facebook or other supported flows.
     
     @traceable(name="upload_facebook")
     def upload_to_facebook(self, video_info: Dict[str, Any]) -> Dict[str, Any]:
@@ -438,7 +336,7 @@ Transform your business today
                 "subject": subject,
                 "body": body,
                 "is_html": is_html,
-                "entity_id": self.user_id or "me"
+                "entity_id": self.gmail_user_id or "me"
             }
             
             logger.info(f"Gmail params: subject='{subject[:50]}...', recipient={recipient_email}")
@@ -503,9 +401,9 @@ Transform your business today
             if video_info.get("status") != "success":
                 return f" Video creation failed: {video_info.get('message')}"
             
-            # Step 3: Upload to YouTube with Composio (with rate limit check)
-            logger.info(" Step 3: Uploading to YouTube with Composio...")
-            youtube_result = self.upload_to_youtube(video_info)
+            # Step 3: YouTube upload removed
+            logger.info(" Step 3: YouTube upload removed/disabled in this build")
+            youtube_result = {"status": "disabled", "message": "YouTube upload removed"}
             
             # Step 4: Upload to Facebook (always attempt, regardless of YouTube status)
             logger.info(" Step 4: Uploading to Facebook...")

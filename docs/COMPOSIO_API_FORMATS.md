@@ -92,3 +92,15 @@ headers = {
 4. **Facebook:** Use `file_url` NOT `videoFilePath`
 5. **Both:** Use `connected_account_id` in payload, NOT `user_id`
 6. **Response:** Check `successful` field, NOT `success`
+
+## Remote vs local video with `videoFilePath`
+
+- `YOUTUBE_UPLOAD_VIDEO` accepts a `videoFilePath`. In practice the Composio tool can accept either a URL (remote server fetch) or a local file path that points to a file the caller uploaded externally.
+- Our `fdwa_complete_agent.py` now supports both modes via env var `COMPOSIO_USE_REMOTE_VIDEO_URL` (default: `true`). If true, the agent passes the `video_url` from the Creatomate render as the `videoFilePath`; if false, the agent downloads the file locally and passes a local path to Composio.
+- If you see `Processing abandoned` on YouTube, the likely causes are codec or corrupted file; try setting `COMPOSIO_USE_REMOTE_VIDEO_URL=false` to force local download and re-encode to `H.264 + AAC` before upload (we added that re-encode step in the agent).
+
+## Troubleshooting/Debugging
+
+- Log the Composio response object and look for `data.response_data.status.uploadStatus`.
+- If `uploadStatus` is `uploaded` but processing fails, use `ffprobe` on the source file to inspect codecs and re-encode to `h264` + `aac`.
+- Use `REENCODE_BEFORE_UPLOAD=false` to skip re-encoding (not recommended when uploads fail).
