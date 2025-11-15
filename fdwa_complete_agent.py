@@ -437,7 +437,8 @@ Transform your business today
                 "recipient_email": recipient_email,
                 "subject": subject,
                 "body": body,
-                "is_html": is_html
+                "is_html": is_html,
+                "entity_id": self.user_id or "me"
             }
             
             logger.info(f"Gmail params: subject='{subject[:50]}...', recipient={recipient_email}")
